@@ -1,0 +1,12 @@
+docker>=7.0.0
+typer[all]>=0.9.0
+colorlog>=6.7.0
+pyyaml>=6.0
+rich>=13.4.2
+python-dotenv>=1.0.0
+questionary>=2.0.0
+click>=8.0.0
+shellingham>=1.5.0
+croniter>=2.0.0 
+schedule
+loguru>=0.7.0

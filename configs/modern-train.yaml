@@ -1,0 +1,33 @@
+cleanup:
+  directories:
+  - /var/cache/apt/
+  - /root/.cache/pip/
+  - /root/.cache/huggingface/
+  - /tmp/*
+  - /var/log/*.log
+  - /var/log/*.gz
+  exclude_directories:
+  - /root/.cursor/
+  - /root/.config/cursor/
+  - /etc/ssh/
+  - /root/.ssh/
+  - /workspace/
+compose:
+  file_path: ${project_dir}/docker-compose.yml
+container_name: modern-train
+cron:
+  auto_clean: true
+  auto_push: false
+  enabled: false
+  max_backups: 5
+  schedule: 0 0 * * *
+image_name: modern-train
+project_dir: /home/chenkang/workspace/deeplearning-docker/docker_projects/modern-train
+project_name: modern-train
+push:
+  additional_tags: []
+  auto_push: false
+  push_base_image: false
+  registry: docker.io
+  repository: ''
+  username: ''
