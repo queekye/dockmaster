@@ -11,7 +11,7 @@ import tempfile
 import docker
 
 from loguru import logger
-from docker_manager.constants import DEFAULT_FILES
+from dockmaster.constants import DEFAULT_FILES
 
 
 def run_command(command: str, shell: bool = False, check: bool = True) -> Tuple[int, str, str]:

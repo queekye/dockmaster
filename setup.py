@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="dockmaster",
-    version="0.1.1",
+    version="0.1.2",
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
@@ -23,7 +23,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "dm=docker_manager.cli:main",
+            "dm=dockmaster.cli:main",
         ],
     },
     python_requires=">=3.8",
@@ -33,11 +33,11 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     keywords="docker, container, management, devops, automation",
-    url="https://github.com/queekye/docker_manager",
+    url="https://github.com/queekye/dockmaster",
     project_urls={
-        "Bug Tracker": "https://github.com/queekye/docker_manager/issues",
-        "Documentation": "https://github.com/queekye/docker_manager/wiki",
-        "Source Code": "https://github.com/queekye/docker_manager",
+        "Bug Tracker": "https://github.com/queekye/dockmaster/issues",
+        "Documentation": "https://github.com/queekye/dockmaster/wiki",
+        "Source Code": "https://github.com/queekye/dockmaster",
     },
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import datetime
 
 from loguru import logger
-from docker_manager.constants import (
+from dockmaster.constants import (
     DEFAULT_FILES,
     DEFAULT_PROJECT_CONFIG,
     REQUIRED_FILES,
@@ -17,10 +17,10 @@ from docker_manager.constants import (
     ERROR_MESSAGES,
     COLORS
 )
-from docker_manager.interactive import configure_project, configure_schedule
-from docker_manager.utils import confirm_action
-from docker_manager.cli_utils import check_project_status, ProjectContext, get_project_manager
-from docker_manager.managers.project_manager import ProjectManager
+from dockmaster.interactive import configure_project, configure_schedule
+from dockmaster.utils import confirm_action
+from dockmaster.cli_utils import check_project_status, ProjectContext, get_project_manager
+from dockmaster.managers.project_manager import ProjectManager
 
 # 创建CLI应用
 app = typer.Typer(
@@ -338,7 +338,7 @@ def schedule_task(
                     logger.info("当前没有配置定时任务")
                     return
                     
-                from docker_manager.interactive import questionary
+                from dockmaster.interactive import questionary
                 task_to_remove = questionary.select(
                     "选择要删除的任务",
                     choices=list(tasks.keys())
@@ -477,7 +477,7 @@ def cleanup_images(
             image_summary = project_manager.image_manager.get_images_summary()
             
             # 交互式配置
-            from docker_manager.interactive import configure_cleanup
+            from dockmaster.interactive import configure_cleanup
             cleanup_config = configure_cleanup(image_summary)
             
             # 如果用户取消，则退出
