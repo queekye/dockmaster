@@ -19,7 +19,7 @@ from dockmaster.constants import (
 )
 from dockmaster.interactive import configure_project, configure_schedule
 from dockmaster.utils import confirm_action
-from dockmaster.cli_utils import check_project_status, ProjectContext, get_project_manager
+from dockmaster.cli_utils import check_project_status, ProjectContext, get_project_manager, check_config_exists
 from dockmaster.managers.project_manager import ProjectManager
 
 # 创建CLI应用
@@ -77,6 +77,7 @@ def init_project(
         sys.exit(1)
 
 @app.command("config")
+@check_config_exists
 def config_project():
     """交互式配置项目基本信息"""
     try:
@@ -117,6 +118,7 @@ def config_project():
         sys.exit(1)
 
 @app.command("build")
+@check_config_exists
 def build_image(
     dockerfile: str = typer.Option(None, "-f", "--file", help="Dockerfile路径"),
     push: bool = typer.Option(False, "-p", "--push", help="构建后推送镜像"),
@@ -156,6 +158,7 @@ def build_image(
         sys.exit(1)
 
 @app.command("up")
+@check_config_exists
 def start_container(
     compose_file: str = typer.Option(None, "-f", "--file", help="Docker Compose文件路径"),
     force: bool = typer.Option(False, "-f", "--force", help="强制启动，不进行状态检查")
@@ -182,6 +185,7 @@ def start_container(
         sys.exit(1)
 
 @app.command("down")
+@check_config_exists
 def stop_container(
     force: bool = typer.Option(False, "-f", "--force", help="强制停止，不进行状态检查")
 ):
@@ -203,6 +207,7 @@ def stop_container(
         sys.exit(1)
 
 @app.command("save")
+@check_config_exists
 def save_container(
     tag: str = typer.Option(None, "-t", "--tag", help="镜像标签"),
     cleanup: bool = typer.Option(False, "-c", "--cleanup", help="保存前清理容器"),
@@ -236,6 +241,7 @@ def save_container(
         sys.exit(1)
 
 @app.command("push")
+@check_config_exists
 def push_image(
     registry: str = typer.Option(None, "-r", "--registry", help="远程仓库地址"),
     username: str = typer.Option(None, "-u", "--username", help="仓库用户名"),
@@ -305,6 +311,7 @@ def push_image(
         sys.exit(1)
 
 @app.command("schedule")
+@check_config_exists
 def schedule_task(
     task_type: str = typer.Argument(None, help="任务类型：backup/cleanup/list/remove"),
     cron: str = typer.Argument(None, help="时间格式 (HH:MM)，仅用于命令行方式"),
@@ -413,6 +420,7 @@ def schedule_task(
         sys.exit(1)
 
 @app.command("status")
+@check_config_exists
 def show_status():
     """显示项目状态"""
     try:
@@ -426,6 +434,21 @@ def show_status():
         logger.info("\n镜像信息:")
         logger.info(f"  名称: {status['image']['name']}")
         logger.info(f"  仓库: {status['image']['registry']['url']}")
+        logger.info(f"  状态: {'存在' if status['image']['exists'] else '不存在'}")
+        logger.info(f"  备份数量: {status['image']['backup_count']} 个")
+        
+        if status['image']['backup_count'] > 0:
+            logger.info(f"  总大小: {round(status['image']['total_size_mb'], 2)} MB")
+            logger.info(f"  最近备份: {status['image']['latest_backup']} 天前")
+            
+            # 显示最近的几个备份镜像
+            if status['image']['summary']['project_images']:
+                logger.info("  最近备份镜像:")
+                for i, img in enumerate(status['image']['summary']['project_images'][:3]):  # 只显示最近的3个
+                    logger.info(f"    - {img['full_tag']} (创建于 {img['created_ago']} 天前, 大小 {img['size_mb']} MB)")
+                
+                if len(status['image']['summary']['project_images']) > 3:
+                    logger.info(f"    ... 还有 {len(status['image']['summary']['project_images']) - 3} 个备份镜像")
         
         logger.info("\n容器信息:")
         logger.info(f"  名称: {status['container']['name']}")
@@ -442,6 +465,7 @@ def show_status():
         sys.exit(1)
 
 @app.command("logs")
+@check_config_exists
 def show_logs(
     follow: bool = typer.Option(False, "-f", "--follow", help="持续显示日志"),
     force: bool = typer.Option(False, "--force", help="强制显示日志，不进行状态检查")
@@ -460,6 +484,7 @@ def show_logs(
         sys.exit(1)
 
 @app.command("cleanup")
+@check_config_exists
 def cleanup_images(
     days: int = typer.Option(None, "-d", "--days", help="保留最近几天的镜像"),
     count: int = typer.Option(None, "-n", "--count", help="为每个仓库保留的最新镜像数量"),

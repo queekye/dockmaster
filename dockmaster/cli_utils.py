@@ -3,8 +3,10 @@
 import os
 import re
 import json
+import sys
 from threading import Lock
 from pathlib import Path
+from functools import wraps
 
 from loguru import logger
 from .constants import (
@@ -181,4 +183,32 @@ def get_project_manager():
     
     # 如果无法从配置文件加载，使用上下文信息
     project_manager = ProjectManager(ctx.project_name, project_dir)
-    return project_manager 
+    return project_manager
+
+def check_config_exists(func):
+    """
+    装饰器：检查配置文件是否存在
+    
+    Args:
+        func: 要装饰的函数
+        
+    Returns:
+        装饰后的函数
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # 获取当前项目目录
+        ctx = ProjectContext.get_instance()
+        project_dir = ctx.project_dir
+        
+        # 检查配置文件是否存在
+        config_file = os.path.join(project_dir, 'config.json')
+        if not os.path.exists(config_file):
+            logger.error(f"错误：项目配置文件不存在: {config_file}")
+            logger.info("请先使用 'dm init' 命令初始化项目，或在包含config.json的目录中运行命令")
+            sys.exit(1)
+        
+        # 调用原函数
+        return func(*args, **kwargs)
+    
+    return wrapper 

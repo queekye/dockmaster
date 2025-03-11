@@ -178,6 +178,17 @@ class ProjectManager(BaseManager):
                             'schedule': task_info['cron']
                         })
             
+            # 获取镜像摘要信息
+            image_summary = self.image_manager.get_images_summary()
+            
+            # 检查镜像是否存在
+            image_exists = False
+            try:
+                self.docker_client.images.get(self.image_manager.image_name)
+                image_exists = True
+            except Exception:
+                pass
+            
             # 构建状态信息
             status = {
                 'project': {
@@ -188,7 +199,12 @@ class ProjectManager(BaseManager):
                     'name': self.config['image']['name'],
                     'registry': {
                         'url': self.config['image']['registry']['url']
-                    }
+                    },
+                    'exists': image_exists,
+                    'backup_count': len(image_summary['project_images']),
+                    'total_size_mb': sum(img['size_mb'] for img in image_summary['project_images']),
+                    'latest_backup': image_summary['project_images'][0]['created_ago'] if image_summary['project_images'] else None,
+                    'summary': image_summary
                 },
                 'container': {
                     'name': self.config['container']['name'],
