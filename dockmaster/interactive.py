@@ -52,6 +52,11 @@ def configure_project(config: Dict[str, Any]) -> Dict[str, Any]:
         default=config['image']['registry'].get('url', 'docker.io')
     ).ask()
 
+    updated_config['image']['registry']['prefix'] = questionary.text(
+        "镜像前缀（可选，优先于用户名）",
+        default=config['image']['registry'].get('prefix', '')
+    ).ask()
+
     updated_config['image']['registry']['username'] = questionary.text(
         "仓库用户名",
         default=config['image']['registry'].get('username', '')

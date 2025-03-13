@@ -369,6 +369,7 @@ class ContainerManager(BaseManager):
                     if 'image' in config and 'registry' in config['image']:
                         registry = config['image']['registry'].get('url')
                         username = config['image']['registry'].get('username')
+                        prefix = config['image']['registry'].get('prefix')
                         # 优先从环境变量获取密码
                         env_var_name = f"DOCKER_PASSWORD_{username.upper()}" if username else "DOCKER_PASSWORD"
                         password = os.environ.get(env_var_name) or config['image']['registry'].get('password')
@@ -400,13 +401,14 @@ class ContainerManager(BaseManager):
                             if 'image' in config and 'registry' in config['image']:
                                 registry = config['image']['registry'].get('url')
                                 username = config['image']['registry'].get('username')
+                                prefix = config['image']['registry'].get('prefix')
                                 # 优先从环境变量获取密码
                                 env_var_name = f"DOCKER_PASSWORD_{username.upper()}" if username else "DOCKER_PASSWORD"
                                 password = os.environ.get(env_var_name) or config['image']['registry'].get('password')
                     
                     # 创建ImageManager实例并推送镜像
                     image_manager = ImageManager(self.project_dir, saved_image_name)
-                    if image_manager.push_image(registry, username, password):
+                    if image_manager.push_image(registry, username, password, prefix=prefix):
                         logger.success(f"备份镜像 {saved_image_name} 推送成功")
                     else:
                         logger.error(f"备份镜像 {saved_image_name} 推送失败")

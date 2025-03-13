@@ -253,7 +253,7 @@ class ImageManager(BaseManager):
             logger.error(f"构建镜像失败: {e}")
             return False
     
-    def push_image(self, registry: str = None, username: str = None, password: str = None) -> bool:
+    def push_image(self, registry: str = None, username: str = None, password: str = None, prefix: str = None) -> bool:
         """
         推送镜像到远程仓库
         
@@ -261,6 +261,7 @@ class ImageManager(BaseManager):
             registry: 远程仓库地址
             username: 用户名
             password: 密码，如果为None，会尝试从环境变量获取
+            prefix: 镜像前缀，优先于username作为命名空间
             
         Returns:
             bool: 是否推送成功
@@ -268,11 +269,14 @@ class ImageManager(BaseManager):
         try:
             original_image_name = self.image_name
             
-            # 检查镜像名称是否已包含用户名作为命名空间
-            if username and '/' not in self.image_name:
-                # 自动添加用户名作为命名空间前缀
-                self.image_name = f"{username}/{self.image_name}"
-                logger.info(f"自动添加用户名作为命名空间: {self.image_name}")
+            # 确定命名空间（优先使用prefix，其次使用username）
+            namespace = prefix or username
+            
+            # 检查镜像名称是否已包含命名空间
+            if namespace and '/' not in self.image_name:
+                # 自动添加命名空间前缀
+                self.image_name = f"{namespace}/{self.image_name}"
+                logger.info(f"自动添加命名空间: {self.image_name}")
                 
                 # 为原始镜像添加新标签
                 try:

@@ -148,7 +148,7 @@ def build_image(
         
         if project_manager.image_manager.build_image(dockerfile, build_args_dict):
             logger.success("镜像构建成功")
-            if push and project_manager.image_manager.push_image():
+            if push and project_manager.image_manager.push_image(prefix=project_manager.config.get('image', {}).get('registry', {}).get('prefix')):
                 logger.success("镜像推送成功")
         else:
             logger.error("镜像构建失败")
@@ -247,6 +247,7 @@ def push_image(
     username: str = typer.Option(None, "-u", "--username", help="仓库用户名"),
     password: str = typer.Option(None, "-p", "--password", help="仓库密码"),
     tag: str = typer.Option("latest", "-t", "--tag", help="要推送的镜像标签"),
+    prefix: str = typer.Option(None, "--prefix", help="镜像前缀，优先于username"),
     force: bool = typer.Option(False, "-f", "--force", help="强制推送，不进行状态检查")
 ):
     """推送镜像到远程仓库"""
@@ -260,6 +261,20 @@ def push_image(
         # 如果未指定，则使用配置中的值
         if not registry:
             registry = project_manager.config.get('image', {}).get('registry', {}).get('url')
+        
+        # 获取镜像名称
+        image_name = project_manager.config.get('image', {}).get('name')
+        
+        # 如果指定了prefix，更新配置
+        if prefix:
+            config_updates = {
+                'image': {
+                    'registry': {
+                        'prefix': prefix
+                    }
+                }
+            }
+            project_manager.update_config(config_updates)
         
         if not username:
             username = project_manager.config.get('image', {}).get('registry', {}).get('username')
@@ -301,7 +316,7 @@ def push_image(
                     password = None
         
         # 推送镜像
-        if project_manager.image_manager.push_image(registry, username, password):
+        if project_manager.image_manager.push_image(registry, username, password, prefix=prefix):
             logger.success(f"镜像推送成功")
         else:
             logger.error("推送镜像失败")

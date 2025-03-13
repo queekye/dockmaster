@@ -22,7 +22,8 @@ DEFAULT_PROJECT_CONFIG = {
         'registry': {
             'url': 'docker.io',
             'username': '',
-            'password': ''
+            'password': '',
+            'prefix': ''  # 镜像前缀，优先于username
         }
     },
     'container': {
