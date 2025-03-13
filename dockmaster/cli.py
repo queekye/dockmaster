@@ -275,6 +275,8 @@ def push_image(
                 }
             }
             project_manager.update_config(config_updates)
+        else:
+            prefix = project_manager.config.get('image', {}).get('registry', {}).get('prefix')
         
         if not username:
             username = project_manager.config.get('image', {}).get('registry', {}).get('username')
