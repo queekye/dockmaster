@@ -1,12 +1,22 @@
-docker>=7.0.0
-typer>=0.9.0
-colorlog>=6.7.0
-pyyaml>=6.0
-rich>=13.4.2
-python-dotenv>=1.0.0
-questionary>=2.0.0
-click>=8.0.0
-shellingham>=1.5.0
-croniter>=2.0.0 
-schedule
-loguru>=0.7.0
+# 核心依赖
+docker>=7.0.0         # Docker SDK
+typer>=0.9.0         # CLI框架
+rich>=13.4.2         # 终端美化
+loguru>=0.7.0        # 日志管理
+
+# CLI相关
+click>=8.0.0         # Typer的底层依赖
+shellingham>=1.5.0   # Shell检测
+questionary>=2.0.0   # 交互式提示
+
+# 配置和格式化
+pyyaml>=6.0          # YAML处理
+colorlog>=6.7.0      # 彩色日志输出
+python-dotenv>=1.0.0 # 环境变量管理
+
+# 调度相关
+schedule>=1.2.0      # 任务调度
+croniter>=2.0.0      # Cron表达式解析
+
+# 进程管理
+python-daemon>=3.0.1 # 守护进程支持

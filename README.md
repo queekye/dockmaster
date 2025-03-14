@@ -75,14 +75,14 @@ dm config username myname
 ### 定时任务管理
 
 ```bash
-# 交互式配置定时任务（支持常用定时方案选择）
+# 交互式配置定时任务（支持多种执行频率）
 dm schedule
 
-# 快速设置备份任务
-dm schedule backup "0 0 * * *"
+# 快速设置备份任务（每天指定时间）
+dm schedule backup "00:00"
 
-# 快速设置清理任务
-dm schedule cleanup "0 0 * * *"
+# 快速设置清理任务（每天指定时间）
+dm schedule cleanup "00:00"
 
 # 列出所有定时任务
 dm schedule list
@@ -92,19 +92,29 @@ dm schedule remove
 
 # 删除指定类型的定时任务
 dm schedule remove backup
+
+# 管理调度器
+dm schedule start   # 启动调度器
+dm schedule stop    # 停止调度器
+dm schedule restart # 重启调度器
+
+# 查看调度器日志
+dm schedule logs [-n 行数] [-f 持续显示]
+dm schedule logs backup  # 查看备份任务日志
+dm schedule logs cleanup # 查看清理任务日志
 ```
 
 ### 高级命令
 
 ```bash
-# 构建并推送镜像
-dm build -p
+# 构建并推送镜像（支持镜像前缀）
+dm build -p --prefix organization-name
 
 # 清理并保存容器
 dm save -c
 
-# 推送镜像到指定仓库
-dm push -r registry.example.com -u username -p password
+# 推送镜像到指定仓库（支持镜像前缀）
+dm push -r registry.example.com -u username -p password --prefix organization-name
 
 # 推送镜像并使用配置文件中的认证信息
 dm push
@@ -154,7 +164,8 @@ services:
     "registry": {
       "url": "docker.io",
       "username": "username",
-      "password": ""
+      "password": "",
+      "prefix": "organization-name"
     }
   },
   "container": {
@@ -162,23 +173,19 @@ services:
     "compose_file": "docker-compose.yml",
     "cleanup": {
       "paths": ["/tmp/*", "/var/cache/*"]
-    },
-    "backup": {
-      "schedule": "0 0 * * *",
-      "cleanup": false,
-      "auto_push": false
     }
   },
   "schedule": {
     "backup": {
-      "cron": "0 0 * * *",
-      "job_id": "unique_job_id",
+      "type": "daily",
+      "time": "00:00",
       "cleanup": false,
       "auto_push": false
     },
     "cleanup": {
-      "cron": "0 0 * * 0",
-      "job_id": "unique_job_id",
+      "type": "weekly",
+      "weekday": "monday",
+      "time": "00:00",
       "paths": ["/tmp/*", "/var/cache/*"]
     }
   }
@@ -210,7 +217,27 @@ services:
 
 ## 定时任务管理
 
-工具提供了强大的定时任务管理功能
+工具提供了强大的定时任务管理功能，支持多种执行频率和灵活的配置选项。
+
+### 支持的定时任务类型
+
+1. **每天执行**
+   - 在指定时间执行任务
+   - 格式：`HH:MM`
+
+2. **每周执行**
+   - 在指定的星期几和时间执行
+   - 支持选择具体星期几
+   - 格式：`星期几 HH:MM`
+
+3. **每月执行**
+   - 在每月指定日期和时间执行
+   - 支持选择1-31号
+   - 格式：`日期 HH:MM`
+
+4. **每小时执行**
+   - 在每小时的指定分钟执行
+   - 格式：`分钟数(0-59)`
 
 ### 任务类型
 
@@ -219,9 +246,29 @@ services:
 - **备份任务**：定期将容器保存为镜像
   - 可选择是否在备份前清理容器
   - 可选择是否自动推送备份镜像
+  - 支持自定义备份镜像名称和标签
 
 - **清理任务**：定期清理容器内的缓存文件
   - 可自定义清理路径
+  - 支持多路径配置
+  - 支持排除特定路径
+
+### 调度器管理
+
+- **状态监控**
+  - 实时查看调度器运行状态
+  - 查看任务执行历史
+  - 监控任务执行时间
+
+- **日志管理**
+  - 分任务类型记录日志
+  - 支持日志轮转
+  - 支持实时日志查看
+
+- **错误处理**
+  - 自动记录任务执行错误
+  - 失败重试机制
+  - 异常通知
 
 ## 工作流最佳实践
 
