@@ -122,8 +122,13 @@ class ContainerManager(BaseManager):
             bool: 是否停止成功
         """
         try:
+            # 如果compose_file未设置，尝试在项目目录中查找
             if not self.compose_file:
-                raise ContainerError("未指定Docker Compose文件")
+                default_compose_file = self.project_dir / 'docker-compose.yml'
+                if default_compose_file.exists():
+                    self.compose_file = default_compose_file
+                else:
+                    raise ContainerError("未找到Docker Compose文件，请确保docker-compose.yml存在")
             
             logger.warning("停止容器...")
             run_command(f"docker compose -f {self.compose_file} down", shell=True)
