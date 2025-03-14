@@ -58,6 +58,9 @@ def check_project_status(project_manager, operation_type):
                 if not confirm_action("是否重新启动容器?"):
                     logger.warning("操作已取消")
                     return False
+                else:
+                    # 设置重启标志
+                    project_manager.container_manager._is_restart = True
             
             # 检查镜像是否存在
             try:

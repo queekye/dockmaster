@@ -95,7 +95,16 @@ class ContainerManager(BaseManager):
                 container = self.docker_client.containers.get(self.container_name)
                 if container.status == "running":
                     logger.warning("容器已经在运行中")
-                    return True
+                    # 如果是通过状态检查后选择重启的情况，先停止容器
+                    if hasattr(self, '_is_restart') and self._is_restart:
+                        logger.warning("正在停止容器...")
+                        run_command(f"docker compose -f {self.compose_file} down", shell=True)
+                        success, error = self._wait_for_container_status("removed")
+                        if not success:
+                            raise ContainerError(error)
+                        delattr(self, '_is_restart')
+                    else:
+                        return True
             except NotFound:
                 pass
             
