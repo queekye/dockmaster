@@ -14,14 +14,16 @@
 ## 安装
 
 ```bash
+# 从PyPI安装最新版本
+pip install dockmaster
+
+# 安装指定版本
+pip install dockmaster==0.1.8
+
 # 从源码安装
 git clone https://github.com/queekye/dockmaster.git
 cd dockmaster
 pip install -e .
-```
-
-```
-pip install dockmaster
 ```
 
 ## 快速开始
