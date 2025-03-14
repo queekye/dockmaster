@@ -13,8 +13,10 @@ from requests.exceptions import RequestException
 
 from .base_manager import BaseManager
 from .image_manager import ImageManager
+from .scheduler_daemon import SchedulerDaemon
 from loguru import logger
 from ..utils import run_command, confirm_action, get_timestamp
+import typer
 
 class ContainerError(Exception):
     """容器操作错误"""
@@ -40,6 +42,7 @@ class ContainerManager(BaseManager):
         self.container_name = container_name
         self.compose_file = None
         self._check_docker_connection()
+        self.scheduler_daemon = SchedulerDaemon(project_dir)
         
     def _check_docker_connection(self):
         """检查Docker守护进程连接"""
@@ -50,7 +53,7 @@ class ContainerManager(BaseManager):
     
     def _wait_for_container_status(self, expected_status: str, timeout: int = None) -> Tuple[bool, Optional[str]]:
         """等待容器达到预期状态"""
-        if timeout is None:
+        if not timeout:
             timeout = self.STARTUP_TIMEOUT
             
         start_time = time.time()
@@ -240,107 +243,6 @@ class ContainerManager(BaseManager):
             logger.error(f"清理容器失败: {e}")
             return False
     
-    def _schedule_task(self, task_type: str, schedule_config: Union[str, Dict[str, Any]], 
-                     job_func: Callable, extra_info: Dict[str, Any] = None) -> bool:
-        """
-        通用的定时任务设置方法
-        
-        Args:
-            task_type: 任务类型 (backup/cleanup)
-            schedule_config: 定时配置，可以是字符串(向后兼容)或字典
-            job_func: 要执行的任务函数
-            extra_info: 额外信息，保存到配置文件中
-            
-        Returns:
-            bool: 是否设置成功
-        """
-        try:
-            # 确保日志目录存在
-            logs_dir = self.project_dir / "logs"
-            logs_dir.mkdir(exist_ok=True)
-            
-            # 创建任务包装函数，用于记录日志
-            def task_wrapper():
-                # 创建任务特定的日志文件
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                log_file = logs_dir / f"{task_type}_{timestamp}.log"
-                
-                # 添加文件处理器
-                file_handler = logger.add(
-                    str(log_file),
-                    rotation=None,  # 每次任务执行创建新文件，不需要轮转
-                    retention=10,   # 保留最近10个日志文件
-                    level="INFO",
-                    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}"
-                )
-                
-                try:
-                    logger.info(f"开始执行定时{task_type}任务")
-                    # 执行实际任务
-                    job_func()
-                    logger.info(f"定时{task_type}任务执行完成")
-                except Exception as e:
-                    logger.error(f"定时{task_type}任务执行失败: {e}")
-                    # 记录详细的异常信息
-                    import traceback
-                    logger.error(f"异常详情: {traceback.format_exc()}")
-                finally:
-                    # 移除文件处理器
-                    logger.remove(file_handler)
-            
-            # 解析定时配置并设置定时任务
-            job = None
-            
-            # 向后兼容：如果是字符串，假设是时间格式 (HH:MM)
-            if isinstance(schedule_config, str):
-                # 验证时间格式
-                import re
-                if re.match(r'^([0-1]?[0-9]|2[0-3]):([0-5][0-9])(:([0-5][0-9]))?$', schedule_config):
-                    job = schedule.every().day.at(schedule_config).do(task_wrapper)
-                else:
-                    raise ValueError(f"无效的时间格式: {schedule_config}，请使用 HH:MM 格式")
-            else:
-                # 新格式：字典配置
-                schedule_type = schedule_config.get("type")
-                
-                if schedule_type == "daily":
-                    time = schedule_config.get("time", "00:00")
-                    job = schedule.every().day.at(time).do(task_wrapper)
-                
-                elif schedule_type == "weekly":
-                    weekday = schedule_config.get("weekday", "monday")
-                    time = schedule_config.get("time", "00:00")
-                    weekday_method = getattr(schedule.every(), weekday)
-                    job = weekday_method.at(time).do(task_wrapper)
-                
-                elif schedule_type == "monthly":
-                    day = schedule_config.get("day", 1)
-                    time = schedule_config.get("time", "00:00")
-                    # schedule库不直接支持每月执行，使用自定义逻辑
-                    job = schedule.every().day.at(time).do(
-                        lambda: task_wrapper() if datetime.now().day == day else None
-                    )
-                
-                elif schedule_type == "hourly":
-                    minute = schedule_config.get("minute", 0)
-                    job = schedule.every().hour.at(f":{minute:02d}").do(task_wrapper)
-                
-                else:
-                    raise ValueError(f"不支持的定时类型: {schedule_type}")
-            
-            if job is None:
-                raise ValueError(f"无法设置定时任务: {schedule_config}")
-            
-            # 保存任务信息到配置文件
-            self._save_schedule_info(task_type, str(schedule_config), None, extra_info)
-            
-            logger.success(f"已设置定时{task_type}任务: {schedule_config}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"设置定时{task_type}任务失败: {e}")
-            return False
-            
     def schedule_backup(self, schedule_config: Union[str, Dict[str, Any]], image_name: str = None,
                        cleanup: bool = False, auto_push: bool = False) -> bool:
         """
@@ -421,7 +323,15 @@ class ContainerManager(BaseManager):
             "image_name": image_name
         }
         
-        return self._schedule_task("backup", schedule_config, backup_job, extra_info)
+        # 创建任务
+        job = self._schedule_task("backup", schedule_config, backup_job, extra_info)
+        
+        # 询问是否立即启动调度器
+        if job and not self.is_scheduler_running():
+            if typer.confirm("调度器未运行，是否立即启动?"):
+                return self.start_scheduler()
+        
+        return job is not None
     
     def schedule_cleanup(self, schedule_config: Union[str, Dict[str, Any]], paths: List[str] = None) -> bool:
         """
@@ -444,7 +354,104 @@ class ContainerManager(BaseManager):
             "paths": paths
         }
         
-        return self._schedule_task("cleanup", schedule_config, cleanup_job, extra_info)
+        # 创建任务
+        job = self._schedule_task("cleanup", schedule_config, cleanup_job, extra_info)
+        
+        # 询问是否立即启动调度器
+        if job and not self.is_scheduler_running():
+            if typer.confirm("调度器未运行，是否立即启动?"):
+                return self.start_scheduler()
+        
+        return job is not None
+    
+    def _schedule_task(self, task_type: str, schedule_config: Union[str, Dict[str, Any]], 
+                     job_func: Callable, extra_info: Dict[str, Any] = None) -> Optional[schedule.Job]:
+        """
+        通用的定时任务设置方法
+        
+        Args:
+            task_type: 任务类型 (backup/cleanup)
+            schedule_config: 定时配置，可以是字符串(向后兼容)或字典
+            job_func: 要执行的任务函数
+            extra_info: 额外信息，保存到配置文件中
+            
+        Returns:
+            Optional[schedule.Job]: 成功返回任务对象，失败返回None
+        """
+        try:
+            # 检查是否存在同类型的旧任务，如果存在则先删除
+            tasks = self.list_scheduled_tasks()
+            if task_type in tasks:
+                logger.info(f"检测到已存在的 {task_type} 任务，正在删除...")
+                # 从schedule库中移除任务
+                job_id = tasks[task_type].get("job_id")
+                if job_id:
+                    for job in schedule.jobs:
+                        if getattr(job, "job_id", None) == job_id:
+                            schedule.cancel_job(job)
+                            break
+                logger.info(f"已删除旧的 {task_type} 任务")
+
+            # 解析定时配置并设置定时任务
+            job = None
+            
+            # 向后兼容：如果是字符串，假设是时间格式 (HH:MM)
+            if isinstance(schedule_config, str):
+                # 验证时间格式
+                import re
+                if re.match(r'^([0-1]?[0-9]|2[0-3]):([0-5][0-9])(:([0-5][0-9]))?$', schedule_config):
+                    job = schedule.every().day.at(schedule_config).do(job_func)
+                else:
+                    raise ValueError(f"无效的时间格式: {schedule_config}，请使用 HH:MM 格式")
+            else:
+                # 新格式：字典配置
+                schedule_type = schedule_config.get("type")
+                
+                if schedule_type == "daily":
+                    time = schedule_config.get("time", "00:00")
+                    job = schedule.every().day.at(time).do(job_func)
+                
+                elif schedule_type == "weekly":
+                    weekday = schedule_config.get("weekday", "monday")
+                    time = schedule_config.get("time", "00:00")
+                    weekday_method = getattr(schedule.every(), weekday)
+                    job = weekday_method.at(time).do(job_func)
+                
+                elif schedule_type == "monthly":
+                    day = schedule_config.get("day", 1)
+                    time = schedule_config.get("time", "00:00")
+                    # schedule库不直接支持每月执行，使用自定义逻辑
+                    job = schedule.every().day.at(time).do(
+                        lambda: job_func() if datetime.now().day == day else None
+                    )
+                
+                elif schedule_type == "hourly":
+                    minute = schedule_config.get("minute", 0)
+                    job = schedule.every().hour.at(f":{minute:02d}").do(job_func)
+                
+                else:
+                    raise ValueError(f"不支持的定时类型: {schedule_type}")
+            
+            if not job:
+                raise ValueError(f"无法设置定时任务: {schedule_config}")
+            
+            # 生成新的任务ID
+            import uuid
+            job_id = f"{task_type}_{uuid.uuid4().hex[:8]}"
+            setattr(job, "job_id", job_id)
+            
+            # 设置任务类型属性，用于日志记录
+            setattr(job, "task_type", task_type)
+            
+            # 保存任务信息到配置文件
+            self._save_schedule_info(task_type, str(schedule_config), job_id, extra_info)
+            
+            logger.success(f"已设置定时{task_type}任务: {schedule_config}")
+            return job
+            
+        except Exception as e:
+            logger.error(f"设置定时{task_type}任务失败: {e}")
+            return None
     
     def _save_schedule_info(self, task_type: str, cron_expr: str, job_id: Optional[str] = None, extra_info: Dict[str, Any] = None) -> None:
         """
@@ -458,7 +465,7 @@ class ContainerManager(BaseManager):
         """
         try:
             # 如果没有提供job_id，生成一个唯一的ID
-            if job_id is None:
+            if not job_id:
                 import uuid
                 job_id = f"{task_type}_{uuid.uuid4().hex[:8]}"
             
@@ -588,4 +595,83 @@ class ContainerManager(BaseManager):
             
         except Exception as e:
             logger.error(f"显示容器日志失败: {e}")
-            return False 
+            return False
+    
+    def start_scheduler(self) -> bool:
+        """
+        启动调度器守护进程
+        
+        Returns:
+            bool: 是否成功启动
+        """
+        success = self.scheduler_daemon.start()
+        if success:
+            logger.success("调度器已启动")
+        return success
+    
+    def stop_scheduler(self) -> bool:
+        """
+        停止调度器守护进程
+        
+        Returns:
+            bool: 是否成功停止
+        """
+        return self.scheduler_daemon.stop()
+    
+    def restart_scheduler(self) -> bool:
+        """
+        重启调度器守护进程
+        
+        Returns:
+            bool: 是否成功重启
+        """
+        return self.scheduler_daemon.restart()
+    
+    def is_scheduler_running(self) -> bool:
+        """
+        检查调度器是否在运行
+        
+        Returns:
+            bool: 是否在运行
+        """
+        return self.scheduler_daemon.is_running()
+
+    def get_scheduler_status(self) -> Dict[str, Any]:
+        """
+        获取调度器状态信息
+        
+        Returns:
+            Dict[str, Any]: 状态信息
+        """
+        status = self.scheduler_daemon.get_status()
+        
+        # 计算运行时间
+        if status.get('status') == 'running' and 'start_time' in status:
+            start_time = datetime.strptime(status['start_time'], "%Y-%m-%d %H:%M:%S")
+            now = datetime.now()
+            delta = now - start_time
+            days = delta.days
+            hours = delta.seconds // 3600
+            minutes = (delta.seconds % 3600) // 60
+            
+            status['uptime'] = {
+                'days': days,
+                'hours': hours,
+                'minutes': minutes,
+                'formatted': f"{days}天{hours}小时{minutes}分钟"
+            }
+        
+        return status
+    
+    def get_scheduler_logs(self, task_type: str = None, lines: int = 100) -> str:
+        """
+        获取调度器日志
+        
+        Args:
+            task_type: 任务类型，如果为None则返回调度器主日志
+            lines: 返回的日志行数
+            
+        Returns:
+            str: 日志内容
+        """
+        return self.scheduler_daemon.get_logs(task_type, lines) 

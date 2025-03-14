@@ -115,16 +115,16 @@ class ProjectContext:
     @classmethod
     def get_instance(cls):
         """获取单例实例"""
-        if cls._instance is None:
+        if not cls._instance:
             with cls._lock:
-                if cls._instance is None:
+                if not cls._instance:
                     cls._instance = cls()
         return cls._instance
     
     @property
     def project_dir(self):
         """获取当前项目目录"""
-        if self._project_dir is None:
+        if not self._project_dir:
             self._project_dir = os.getcwd()
         return self._project_dir
     
@@ -136,7 +136,7 @@ class ProjectContext:
     @property
     def project_name(self):
         """获取当前项目名称"""
-        if self._project_name is None:
+        if not self._project_name:
             self._project_name = os.path.basename(self.project_dir)
         return self._project_name
     

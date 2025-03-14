@@ -266,4 +266,10 @@ def configure_schedule() -> Dict[str, Any]:
         ).ask()
         config["paths"] = [p.strip() for p in paths.split(',')]
 
+    # 添加启动调度器的选项
+    config["start_scheduler"] = questionary.confirm(
+        "是否立即启动调度器?",
+        default=True
+    ).ask()
+
     return config

@@ -330,111 +330,15 @@ def push_image(
 @app.command("schedule")
 @check_config_exists
 def schedule_task(
-    task_type: str = typer.Argument(None, help="任务类型：backup/cleanup/list/remove"),
+    task_type: str = typer.Argument(None, help="任务类型：backup/cleanup/list/remove/start/stop/restart/logs"),
     cron: str = typer.Argument(None, help="时间格式 (HH:MM)，仅用于命令行方式"),
     force: bool = typer.Option(False, "-f", "--force", help="强制设置，不进行状态检查"),
+    lines: int = typer.Option(100, "-n", "--lines", help="显示日志的行数"),
+    follow: bool = typer.Option(False, "-f", "--follow", help="持续显示日志"),
 ):
     """配置定时任务"""
-    try:
-        project_manager = get_project_manager()
-        
-        # 列出所有定时任务
-        if task_type == "list":
-            tasks = project_manager.container_manager.list_scheduled_tasks()
-            if not tasks:
-                logger.info("当前没有配置定时任务")
-                return
-                
-            logger.info("当前配置的定时任务:")
-            for task_name, task_info in tasks.items():
-                logger.info(f"- {task_name}: {task_info['cron']}")
-                for key, value in task_info.items():
-                    if key not in ['cron', 'job_id']:
-                        logger.info(f"  {key}: {value}")
-            return
-            
-        # 删除定时任务
-        if task_type == "remove":
-            if not cron:
-                # 如果没有指定要删除的任务类型，使用交互式选择
-                tasks = project_manager.container_manager.list_scheduled_tasks()
-                if not tasks:
-                    logger.info("当前没有配置定时任务")
-                    return
-                    
-                from dockmaster.interactive import questionary
-                task_to_remove = questionary.select(
-                    "选择要删除的任务",
-                    choices=list(tasks.keys())
-                ).ask()
-                
-                if project_manager.container_manager.remove_scheduled_task(task_to_remove):
-                    logger.success(f"已删除 {task_to_remove} 定时任务")
-                else:
-                    logger.error(f"删除 {task_to_remove} 定时任务失败")
-            else:
-                # 使用命令行参数指定要删除的任务类型
-                if project_manager.container_manager.remove_scheduled_task(cron):
-                    logger.success(f"已删除 {cron} 定时任务")
-                else:
-                    logger.error(f"删除 {cron} 定时任务失败")
-            return
-        
-        # 对于备份任务，需要检查容器状态
-        if not force and task_type == "backup":
-            if not check_project_status(project_manager, 'save'):
-                logger.error("容器未运行，无法设置备份任务")
-                return
-        
-        if not task_type or not cron:
-            # 使用交互式配置模块
-            config = configure_schedule()
-            task_type = config["type"]
-            schedule_config = config["schedule"]
-            
-            # 再次检查，因为用户可能在交互式配置中选择了备份任务
-            if not force and task_type == "backup":
-                if not check_project_status(project_manager, 'save'):
-                    logger.error("容器未运行，无法设置备份任务")
-                    return
-            
-            if task_type == "backup":
-                if project_manager.container_manager.schedule_backup(
-                    schedule_config, None, config["cleanup"], config["auto_push"]
-                ):
-                    logger.success(f"已设置备份任务: {schedule_config}")
-                else:
-                    logger.error("设置备份任务失败")
-                    sys.exit(1)
-            elif task_type == "cleanup":
-                if project_manager.container_manager.schedule_cleanup(schedule_config, config["paths"]):
-                    logger.success(f"已设置清理任务: {schedule_config}")
-                else:
-                    logger.error("设置清理任务失败")
-                    sys.exit(1)
-        else:
-            # 命令行参数方式 - 使用简单的每日定时格式
-            # 创建一个简单的每日定时配置
-            schedule_config = {
-                "type": "daily",
-                "time": cron
-            }
-            
-            if task_type == "backup":
-                if project_manager.container_manager.schedule_backup(schedule_config):
-                    logger.success(f"已设置备份任务: 每天 {cron}")
-                else:
-                    logger.error("设置备份任务失败")
-                    sys.exit(1)
-            elif task_type == "cleanup":
-                if project_manager.container_manager.schedule_cleanup(schedule_config):
-                    logger.success(f"已设置清理任务: 每天 {cron}")
-                else:
-                    logger.error("设置清理任务失败")
-                    sys.exit(1)
-    except Exception as e:
-        logger.error(f"错误：{str(e)}")
-        sys.exit(1)
+    from .commands.schedule import handle_schedule_command
+    handle_schedule_command(task_type, cron, force, lines, follow)
 
 @app.command("status")
 @check_config_exists
@@ -444,39 +348,8 @@ def show_status():
         project_manager = get_project_manager()
         status = project_manager.get_status()
         
-        logger.info("\n项目信息:")
-        logger.info(f"  名称: {status['project']['name']}")
-        logger.info(f"  目录: {status['project']['directory']}")
-        
-        logger.info("\n镜像信息:")
-        logger.info(f"  名称: {status['image']['name']}")
-        logger.info(f"  仓库: {status['image']['registry']['url']}")
-        logger.info(f"  状态: {'存在' if status['image']['exists'] else '不存在'}")
-        logger.info(f"  备份数量: {status['image']['backup_count']} 个")
-        
-        if status['image']['backup_count'] > 0:
-            logger.info(f"  总大小: {round(status['image']['total_size_mb'], 2)} MB")
-            logger.info(f"  最近备份: {status['image']['latest_backup']} 天前")
-            
-            # 显示最近的几个备份镜像
-            if status['image']['summary']['project_images']:
-                logger.info("  最近备份镜像:")
-                for i, img in enumerate(status['image']['summary']['project_images'][:3]):  # 只显示最近的3个
-                    logger.info(f"    - {img['full_tag']} (创建于 {img['created_ago']} 天前, 大小 {img['size_mb']} MB)")
-                
-                if len(status['image']['summary']['project_images']) > 3:
-                    logger.info(f"    ... 还有 {len(status['image']['summary']['project_images']) - 3} 个备份镜像")
-        
-        logger.info("\n容器信息:")
-        logger.info(f"  名称: {status['container']['name']}")
-        logger.info(f"  状态: {status['container']['status']}")
-        
-        logger.info("\n定时任务:")
-        if status['schedules']:
-            for task in status['schedules']:
-                logger.info(f"  - {task['type']}: {task['schedule']}")
-        else:
-            logger.info("  无定时任务")
+        from .formatters.status import format_project_status
+        format_project_status(status)
     except Exception as e:
         logger.error(f"错误：{str(e)}")
         sys.exit(1)
@@ -514,7 +387,7 @@ def cleanup_images(
         project_manager = get_project_manager()
         
         # 如果没有指定参数且使用交互式模式
-        if interactive and days is None and count is None:
+        if interactive and not days and not count:
             # 获取镜像摘要信息
             image_summary = project_manager.image_manager.get_images_summary()
             
@@ -532,7 +405,7 @@ def cleanup_images(
             count = cleanup_config.get('count')
             keep_latest = cleanup_config.get('keep_latest', True)
             dry_run = cleanup_config.get('dry_run', False)
-        elif days is None and count is None:
+        elif not days and not count:
             logger.error("错误：必须指定--days或--count参数，或使用交互式模式")
             logger.info("提示：运行 'dm cleanup' 不带参数将启动交互式模式")
             sys.exit(1)
