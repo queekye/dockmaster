@@ -189,6 +189,10 @@ class ProjectManager(BaseManager):
             except Exception:
                 pass
             
+            # 获取调度器状态
+            scheduler_status = self.container_manager.get_scheduler_status()
+            tasks = self.container_manager.list_scheduled_tasks()
+            
             # 构建状态信息
             status = {
                 'project': {
@@ -210,7 +214,9 @@ class ProjectManager(BaseManager):
                     'name': self.config['container']['name'],
                     'status': container_status
                 },
-                'schedules': schedules
+                'schedules': schedules,
+                'scheduler': scheduler_status,
+                'tasks': tasks
             }
             
             return status

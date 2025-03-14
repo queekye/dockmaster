@@ -348,8 +348,12 @@ def show_status():
         project_manager = get_project_manager()
         status = project_manager.get_status()
         
-        from .formatters.status import format_project_status
+        from .formatters.status import format_project_status, format_scheduler_status
         format_project_status(status)
+        
+        # 添加调度器状态展示
+        if 'scheduler' in status:
+            format_scheduler_status(status['scheduler'], status.get('tasks', {}))
     except Exception as e:
         logger.error(f"错误：{str(e)}")
         sys.exit(1)
