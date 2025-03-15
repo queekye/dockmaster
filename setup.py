@@ -1,10 +1,10 @@
 """安装脚本"""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="dockmaster",
-    version="0.1.9",
+    version="0.2.0",
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
@@ -55,4 +55,4 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Operating System :: OS Independent",
     ],
-) 
+)
