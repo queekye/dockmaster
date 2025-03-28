@@ -43,7 +43,12 @@ def init_project(
     """初始化新项目"""
     try:
         ctx = ProjectContext.get_instance()
-        ctx.project_dir = project_dir
+        ctx.project_dir = project_dir or os.getcwd()
+        
+        # 如果没有指定项目名称，则使用目录名作为项目名称
+        if not name:
+            name = os.path.basename(ctx.project_dir)
+        
         ctx.project_name = name
 
         # 检查必需文件
@@ -91,9 +96,19 @@ def config_project():
         # 获取当前配置
         current_config = project_manager.get_config()
 
-        # 如果配置为空，创建默认配置结构
+        # 如果配置为空或不完整，创建默认配置结构
         if not current_config:
             current_config = project_manager.create_default_config()
+        
+        # 确保配置中包含必要的结构
+        if "project" not in current_config:
+            current_config["project"] = {}
+        if "image" not in current_config:
+            current_config["image"] = {"registry": {}}
+        if "container" not in current_config:
+            current_config["container"] = {}
+        if "registry" not in current_config.get("image", {}):
+            current_config["image"]["registry"] = {}
 
         # 使用交互式配置模块获取用户输入的基本配置
         # 注意：这里只会更新用户交互式配置的几个基本项
@@ -158,6 +173,8 @@ def build_image(
         if project_manager.image_manager.build_image(dockerfile, build_args_dict):
             logger.success("镜像构建成功")
             if push and project_manager.image_manager.push_image(
+                registry=project_manager.config.get("image", {}).get("registry", {}).get("url"),
+                username=project_manager.config.get("image", {}).get("registry", {}).get("username"),
                 prefix=project_manager.config.get("image", {}).get("registry", {}).get("prefix")
             ):
                 logger.success("镜像推送成功")
@@ -264,6 +281,7 @@ def push_image(
     tag: str = typer.Option("latest", "-t", "--tag", help="要推送的镜像标签"),
     prefix: str = typer.Option(None, "--prefix", help="镜像前缀，优先于username"),
     force: bool = typer.Option(False, "-f", "--force", help="强制推送，不进行状态检查"),
+    use_timestamp: bool = typer.Option(True, "--timestamp/--no-timestamp", help="是否使用时间戳标签和latest标签分别推送"),
 ):
     """推送镜像到远程仓库"""
     try:
@@ -329,7 +347,7 @@ def push_image(
                     password = None
 
         # 推送镜像
-        if project_manager.image_manager.push_image(registry, username, password, prefix=prefix):
+        if project_manager.image_manager.push_image(registry, username, password, prefix=prefix, use_timestamp_tag=use_timestamp):
             logger.success(f"镜像推送成功")
         else:
             logger.error("推送镜像失败")
