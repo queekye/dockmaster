@@ -9,7 +9,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "docker>=7.0.0",
-        "typer[all]>=0.9.0",
+        "typer>=0.9.0",
         "colorlog>=6.7.0",
         "pyyaml>=6.0",
         "rich>=13.4.2",
@@ -20,6 +20,9 @@ setup(
         "croniter>=2.0.0",
         "schedule",
         "loguru>=0.7.0",
+        "python-daemon>=3.0.1",
+        "pathlib>=1.0.1",
+        "requests>=2.31.0"
     ],
     entry_points={
         "console_scripts": [
