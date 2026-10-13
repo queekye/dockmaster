@@ -1,0 +1,15 @@
+# Optional override: docker compose -f docker-compose.yml -f docker-compose.ssh.yml up -d
+services:
+  modern-train:
+    environment:
+      ENABLE_SSH: "1"
+      ENABLE_MLFLOW: "1"
+    ports:
+      - "127.0.0.1:21022:22"
+    volumes:
+      - type: bind
+        source: ${SSH_AUTHORIZED_KEYS_PATH:?Set a public authorized_keys file path}
+        target: /run/secrets/authorized_keys
+        read_only: true
+        bind:
+          create_host_path: false

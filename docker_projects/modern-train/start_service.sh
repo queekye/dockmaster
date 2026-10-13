@@ -1,37 +1,63 @@
-#!/bin/bash
-GREEN='\033[0;32m'
-NC='\033[0m'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
 
-# 启动MLflow服务
-cd /workspace/mlflow
-nohup mlflow server \
-    --host 0.0.0.0 \
-    --port 6006 \
-    --default-artifact-root file:///workspace/mlflow/artifacts > mlflow.log 2>&1 &
-echo -e "${GREEN}MLflow服务已在后台启动，端口6006${NC}"
+enable_ssh=${ENABLE_SSH:-0}
+enable_mlflow=${ENABLE_MLFLOW:-0}
+keys_file=${SSH_AUTHORIZED_KEYS_FILE:-/run/secrets/authorized_keys}
+workspace=${WORKSPACE_DIR:-/workspace}
 
-# 启动Jupyter服务
-cd /workspace
-nohup jupyter lab --allow-root --ip=0.0.0.0 --no-browser > jupyter.log 2>&1 &
-echo -e "${GREEN}Jupyter Lab已在后台启动，端口8888${NC}"
-
-# 显示Jupyter访问令牌
-sleep 3
-TOKEN=$(grep -oP '(?<=token=)[a-zA-Z0-9]+' jupyter.log | head -1)
-if [ ! -z "$TOKEN" ]; then
-    echo -e "${GREEN}Jupyter访问地址: http://localhost:8888/?token=$TOKEN${NC}"
-else
-    echo -e "${GREEN}Jupyter已启动，但无法获取令牌。请查看jupyter.log获取访问信息。${NC}"
+case "$enable_ssh:$enable_mlflow" in
+  0:0|0:1|1:0|1:1) ;;
+  *) echo "ENABLE_SSH and ENABLE_MLFLOW must be 0 or 1" >&2; exit 2 ;;
+esac
+if [[ "$enable_ssh" == 1 && ! -s "$keys_file" ]]; then
+  echo "SSH requires a nonempty read-only public authorized_keys file at $keys_file" >&2
+  exit 2
+fi
+if [[ "${1:-}" == --check ]]; then
+  echo "Configuration OK: SSH=$enable_ssh MLflow=$enable_mlflow; Jupyter authentication stays enabled"
+  exit 0
+elif [[ $# -gt 0 ]]; then
+  echo "Usage: start-gpu-services [--check]" >&2
+  exit 2
 fi
 
-# 启动SSH服务
-service ssh start
-echo -e "${GREEN}SSH服务已启动${NC}"
+children=()
+stop_children() {
+  trap - TERM INT EXIT
+  if [[ ${#children[@]} -gt 0 ]]; then
+    kill -TERM "${children[@]}" 2>/dev/null || true
+    wait "${children[@]}" 2>/dev/null || true
+  fi
+}
+trap stop_children TERM INT EXIT
 
-# 保持容器运行
-echo -e "${GREEN}所有服务已启动，容器将保持运行${NC}"
-echo -e "${GREEN}使用Ctrl+C可以退出日志查看，但容器会继续在后台运行${NC}"
-echo -e "${GREEN}===============================${NC}"
+if [[ "$enable_ssh" == 1 ]]; then
+  # Unique host identity per container; never generate a client/user private key.
+  mkdir -p /run/sshd
+  ssh-keygen -A
+  /usr/sbin/sshd -t -o "AuthorizedKeysFile=$keys_file"
+  /usr/sbin/sshd -D -e -o "AuthorizedKeysFile=$keys_file" &
+  children+=("$!")
+fi
 
-# 使用tail命令保持容器运行
-tail -f /dev/null 
+if [[ "$enable_mlflow" == 1 ]]; then
+  runuser -u developer -- mkdir -p "$workspace/mlflow/artifacts"
+  # MLflow has no authentication here: bind ONLY the container's loopback interface.
+  runuser -u developer -- mlflow server --host 127.0.0.1 --port 6006 \
+    --backend-store-uri "sqlite:///$workspace/mlflow/mlflow.db" \
+    --default-artifact-root "file://$workspace/mlflow/artifacts" &
+  children+=("$!")
+fi
+
+# Jupyter generates its own token; do not disable auth or print tokens in our wrapper.
+runuser -u developer -- jupyter lab \
+  --ServerApp.ip=0.0.0.0 --ServerApp.port=8888 \
+  --ServerApp.open_browser=False --ServerApp.root_dir="$workspace" &
+children+=("$!")
+set +e
+wait -n "${children[@]}"
+status=$?
+set -e
+exit "$status"

@@ -3,13 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: modern-train:latest
-    container_name: modern-train
+    image: modern-train:local
+    init: true
     ports:
-      - "21888:8888"  # Jupyter
-      - "21006:6006"  # MLflow
-      - "21022:22"    # SSH
-    shm_size: '4gb'  # 增加共享内存大小
+      - "127.0.0.1:21888:8888"
+    environment:
+      ENABLE_SSH: "0"
+      ENABLE_MLFLOW: "0"
+    volumes:
+      - gpu-workspace:/workspace
+    shm_size: '4gb'
     deploy:
       resources:
         reservations:
@@ -17,10 +20,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/ || curl -f http://localhost:6006/ || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
-      start_period: 5s 
+    restart: "no"
+
+volumes:
+  gpu-workspace:

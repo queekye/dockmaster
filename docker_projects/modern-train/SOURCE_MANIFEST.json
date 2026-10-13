@@ -1,0 +1,82 @@
+{
+  "source_repository": "https://github.com/queekye/deeplearning-docker",
+  "source_branch": "main",
+  "source_commit": "3b3588464de7fad6d242272392fedb07625c73b6",
+  "author_evidence": [
+    "Kang Chen <chenkangcs@foxmail.com>"
+  ],
+  "destination": "dockmaster/templates/gpu",
+  "files": [
+    {
+      "source_path": "docker_projects/modern-train/.dockerignore",
+      "destination_path": "templates/gpu/.dockerignore",
+      "source_sha256": "a736c23ed3875a417d3af50378f202a590edb7f6a09403c77a5813ee06ac4216",
+      "delivered_sha256": "fde64171bca532ed6e822e5a7f14a889050f26de7c63ccc893bdd6f485a9fe9d",
+      "status": "safety_or_portability_change"
+    },
+    {
+      "source_path": "docker_projects/modern-train/config.json",
+      "destination_path": "templates/gpu/config.json",
+      "source_sha256": "145084eb2cac24ddb9de90b1a566c022bbd60efcdc425304e8ff553f8e624fc5",
+      "delivered_sha256": "07399c54929b51ea71f10c8bb7a9c665455d89a07ba1157742272f76c722db78",
+      "status": "safety_or_portability_change"
+    },
+    {
+      "source_path": null,
+      "destination_path": "templates/gpu/docker-compose.ssh.yml",
+      "source_sha256": null,
+      "delivered_sha256": "96fa7d071a1f8e7ba45002d5bc4914a54ee740e270d977d97b244e021d866c30",
+      "status": "added"
+    },
+    {
+      "source_path": "docker_projects/modern-train/docker-compose.yml",
+      "destination_path": "templates/gpu/docker-compose.yml",
+      "source_sha256": "4908f02696d3c55d3f4d8a55f448b30d679199562f89a05f28e649f17a6010eb",
+      "delivered_sha256": "531acc3c124d2492f36b4baebdd8cb116aa374553b3836e0139e101ecf66a791",
+      "status": "safety_or_portability_change"
+    },
+    {
+      "source_path": "docker_projects/modern-train/Dockerfile",
+      "destination_path": "templates/gpu/Dockerfile",
+      "source_sha256": "c98a1bd3e0b32842449baca07cfb5769bc283f0ac54ad95e684aa9fabeac5832",
+      "delivered_sha256": "c880ac7b1a2da7f7ea3ac2aa0c2c468b0322029116504d55145f8aecab0ff315",
+      "status": "safety_or_portability_change"
+    },
+    {
+      "source_path": null,
+      "destination_path": "templates/gpu/HANDOFF.md",
+      "source_sha256": null,
+      "delivered_sha256": "45b6dc835704615f262188d744536573808847d24c4c33d1c303ee7e0e8a3c5c",
+      "status": "added"
+    },
+    {
+      "source_path": null,
+      "destination_path": "templates/gpu/README.md",
+      "source_sha256": null,
+      "delivered_sha256": "dbc7849f12bdc83dd570456660ee2c2e09f5f2fa440bdf7a5b78eba98cdfe2d1",
+      "status": "added"
+    },
+    {
+      "source_path": "docker_projects/modern-train/requirements.txt",
+      "destination_path": "templates/gpu/requirements.txt",
+      "source_sha256": "507d97b9e647fc76c84ac020af8dabc279b579f26e6bbd7bfedbbcc5e81842b1",
+      "delivered_sha256": "507d97b9e647fc76c84ac020af8dabc279b579f26e6bbd7bfedbbcc5e81842b1",
+      "status": "unchanged"
+    },
+    {
+      "source_path": null,
+      "destination_path": "templates/gpu/sshd_config",
+      "source_sha256": null,
+      "delivered_sha256": "fdee267b8651f22f197782518b7f90b309d5cbd6a73d9206ca0dfa9dfa5fadb8",
+      "status": "added"
+    },
+    {
+      "source_path": "docker_projects/modern-train/start_service.sh",
+      "destination_path": "templates/gpu/start_service.sh",
+      "source_sha256": "80b049908fc20717dc48b6c531afb81517e548a1e03669ae3a08f06f81ccc1f6",
+      "delivered_sha256": "8b49b8d399b2e6410b39961713ba44f548f692c2fe51372c48cfc3ba67bad982",
+      "status": "safety_or_portability_change"
+    }
+  ],
+  "history_note": "Source Git history is not rewritten. Historical refs/bundles are preserved by the portfolio consolidation workflow."
+}

@@ -1,38 +1,28 @@
 {
   "project": {
     "name": "modern-train",
-    "directory": "/home/chenkang/workspace/deeplearning-docker/docker_projects/modern-train"
+    "directory": "."
   },
   "image": {
     "name": "modern-train",
     "dockerfile": "Dockerfile",
     "registry": {
       "url": "docker.io",
-      "username": "chenkang712",
-      "password": ""
+      "username": "",
+      "password": "",
+      "prefix": ""
     }
   },
   "container": {
     "name": "modern-train",
     "compose_file": "docker-compose.yml",
     "cleanup": {
-      "paths": [
-        "/tmp/*",
-        "/var/cache/*"
-      ]
+      "paths": []
     },
     "backup": {
       "cleanup": false,
       "auto_push": false
     }
   },
-  "schedule": {
-    "backup": {
-      "cron": "{'type': 'daily', 'time': '03:00'}",
-      "job_id": "backup_563b392b",
-      "cleanup": true,
-      "auto_push": true,
-      "image_name": null
-    }
-  }
+  "schedule": {}
 }
