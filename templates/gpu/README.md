@@ -58,3 +58,12 @@ MLflow 此处没有登录认证；不要增加公网映射，实验数据库/工
 尚未实际构建镜像、运行 GPU、验证 SSH 公钥登录或全部研究依赖安装。
 正式使用前在自己的临时 Docker 环境完成 build/up、Jupyter 登录、volume 重启保存和可选 SSH 验证。
 后续优先拆分通用基础依赖/研究可选依赖、生成经构建验证的锁文件、加入隔离 Docker 集成测试。
+
+
+## MLflow 安全最低版本
+
+Dockerfile 要求 MLflow >= 3.5，不使用旧的 major-version 上限。
+MLflow 官方说明 3.5.0 起默认 FastAPI/uvicorn 服务包含 Host/CORS 等安全中间件：
+[官方网络安全说明](https://mlflow.org/docs/latest/self-hosting/security/network/)。
+本模板保留其默认安全设置，不传 `--disable-security-middleware`，仍默认关闭 MLflow，
+开启后只监听容器 loopback。此最低版本不是完整依赖锁或全部依赖漏洞审计；构建验证后再锁定实际版本。

@@ -39,21 +39,21 @@
       "source_path": "docker_projects/modern-train/Dockerfile",
       "destination_path": "templates/gpu/Dockerfile",
       "source_sha256": "c98a1bd3e0b32842449baca07cfb5769bc283f0ac54ad95e684aa9fabeac5832",
-      "delivered_sha256": "c880ac7b1a2da7f7ea3ac2aa0c2c468b0322029116504d55145f8aecab0ff315",
+      "delivered_sha256": "8e208acce99ace8da7c17cc67e8d45adb98b53f5046fa0160812a81b95a16f76",
       "status": "safety_or_portability_change"
     },
     {
       "source_path": null,
       "destination_path": "templates/gpu/HANDOFF.md",
       "source_sha256": null,
-      "delivered_sha256": "45b6dc835704615f262188d744536573808847d24c4c33d1c303ee7e0e8a3c5c",
+      "delivered_sha256": "80007fbf24b171a48069363d3befb70873874f6c2c085f3c32435a8658f7364d",
       "status": "added"
     },
     {
       "source_path": null,
       "destination_path": "templates/gpu/README.md",
       "source_sha256": null,
-      "delivered_sha256": "dbc7849f12bdc83dd570456660ee2c2e09f5f2fa440bdf7a5b78eba98cdfe2d1",
+      "delivered_sha256": "34010412b5aad00252f274e67423767cece6fa1dc7806d53fd1c062d8e221891",
       "status": "added"
     },
     {

@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # No private user key, authorized key, password or token is baked into this image.
 COPY sshd_config /etc/ssh/sshd_config
 COPY requirements.txt /opt/gpu-template/requirements.txt
-RUN pip install --no-cache-dir jupyterlab 'mlflow<3' \
+RUN pip install --no-cache-dir 'jupyterlab>=4,<5' 'mlflow>=3.5' \
     && pip install --no-cache-dir -r /opt/gpu-template/requirements.txt
 
 COPY start_service.sh /usr/local/bin/start-gpu-services

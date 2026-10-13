@@ -41,6 +41,8 @@ def test_default_network_and_no_secret_image_identity():
     assert "ssh-keygen" not in dockerfile
     assert "rm -f /etc/ssh/ssh_host_*" in dockerfile
     assert "id_rsa" not in dockerfile
+    assert "mlflow>=3.5" in dockerfile
+    assert "mlflow<3" not in dockerfile
     ssh_config = (GPU / "sshd_config").read_text(encoding="utf-8")
     assert "PermitRootLogin no" in ssh_config
     assert "PasswordAuthentication no" in ssh_config
