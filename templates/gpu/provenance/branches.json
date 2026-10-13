@@ -1,0 +1,19 @@
+[
+  {
+    "name": "main",
+    "commit": {
+      "sha": "1140445427f550d7ef9ba44d7bf9679402ad11b5",
+      "url": "https://api.github.com/repos/queekye/deeplearning-docker/commits/1140445427f550d7ef9ba44d7bf9679402ad11b5"
+    },
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "enforcement_level": "off",
+        "contexts": [],
+        "checks": []
+      }
+    },
+    "protection_url": "https://api.github.com/repos/queekye/deeplearning-docker/branches/main/protection"
+  }
+]

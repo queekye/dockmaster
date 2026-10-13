@@ -1,0 +1,15 @@
+{
+  "source_repository": "deeplearning-docker",
+  "preserved_refs": [
+    {
+      "source_ref": "refs/heads/main",
+      "target_ref": "refs/heads/history/deeplearning-docker/main",
+      "sha": "1140445427f550d7ef9ba44d7bf9679402ad11b5"
+    }
+  ],
+  "source_backup_sha": "2f2822c85c7a41e111ddfa572f15a09cd64377b9721e8613a010e58d77313c41",
+  "source_default_head": "1140445427f550d7ef9ba44d7bf9679402ad11b5",
+  "migration_manifest": "../SOURCE_MANIFEST.json",
+  "original_history_preserved": true,
+  "safety_fixes_documented": "The shipped template removes baked SSH identity and unsafe listener defaults; modified files are mapped by SOURCE_MANIFEST."
+}
