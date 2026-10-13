@@ -206,4 +206,14 @@ pytest --cov=dockmaster tests/
 
 - 初始版本
 - 基本功能实现
-- 文档完善 
+- 文档完善
+
+### [0.2.2] - 2026-10-13
+
+- 补齐自有源码 MIT 许可和第三方来源说明；GPU 模板整合到 templates/gpu，记录完整来源及交接。
+- 禁止镜像共享 SSH 身份、默认 root/密码登录和外网映射；默认无计划任务、无自动推送。
+- 修复安装时 README 编码、POSIX 守护进程导入和多个项目共享嵌套默认配置。
+- registry 密码不再从 config.json 使用或写回；增加配置/假服务/假 Docker 回归测试。
+- 独立 venv 安装、pytest 安全回归、help 与 sdist/wheel 构建通过；尚无真实 Docker/GPU 集成验收。
+
+- Compose 参数列表防止路径被当 shell 解释；缓存清理明确限域并检查真实路径和返回码。

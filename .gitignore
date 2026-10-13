@@ -19,7 +19,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-tests/
 
 # 虚拟环境
 venv/
@@ -82,4 +81,11 @@ secrets.json
 
 # 系统文件
 .DS_Store
-Thumbs.db 
+Thumbs.db
+# Local credentials/SSH identity
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+authorized_keys
+secrets/

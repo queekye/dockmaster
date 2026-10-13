@@ -18,7 +18,7 @@ logger.add(
 # 导入其他模块
 from .cli import app, main
 
-__version__ = "0.1.0"
+__version__ = "0.2.2"
 
 __all__ = [
     "logger",

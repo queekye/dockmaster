@@ -1,6 +1,6 @@
 # Docker项目和容器管理工具
 
-一个通用的Docker环境管理工具，提供完整的项目、镜像和容器生命周期管理，简化Docker环境的配置、使用和维护。
+一个通用的Docker环境管理工具，提供项目、镜像和容器生命周期管理，简化Docker环境的配置、使用和维护。
 
 ## 核心功能
 
@@ -11,14 +11,20 @@
 - **状态监控**：实时查看项目、镜像和容器状态
 - **资源优化**：智能清理和资源回收
 
+## 当前维护状态
+
+源码 Alpha 版本为 **0.2.2**，这次安全/整合改动尚未发布到 PyPI。
+Linux Docker 环境是主要目标；Windows 支持安装和 help，后台调度需要 POSIX。
+GPU 开发模板已由 deeplearning-docker 合并到 [templates/gpu](templates/gpu/README.md)。
+请先阅读 [交接文档](HANDOFF.md) 的已验证范围和待完成事项；未宣称生产部署或真实 Docker 集成测试已通过。
+
 ## 安装
 
 ```bash
 # 从PyPI安装最新版本
 pip install dockmaster
 
-# 安装指定版本
-pip install dockmaster==0.1.8
+# 旧 PyPI 版本不包含本次安全修复；本次优先源码安装
 
 # 从源码安装
 git clone https://github.com/queekye/dockmaster.git
@@ -60,7 +66,7 @@ dm down
 dm save [-t 标签] [-c 清理]
 
 # 推送镜像到远程仓库
-dm push [-r 仓库地址] [-u 用户名] [-p 密码] [-t 标签]
+dm push [-r 仓库地址] [-u 用户名] [-t 标签] # 用 docker login 或环境变量提供密码
 ```
 
 ### 配置命令
@@ -116,9 +122,9 @@ dm build -p --prefix organization-name
 dm save -c
 
 # 推送镜像到指定仓库（支持镜像前缀）
-dm push -r registry.example.com -u username -p password --prefix organization-name
+dm push -r registry.example.com -u username --prefix organization-name
 
-# 推送镜像并使用配置文件中的认证信息
+# 推送镜像并使用 Docker 凭据存储或环境变量
 dm push
 
 # 查看状态
@@ -174,7 +180,7 @@ services:
     "name": "my-project-container",
     "compose_file": "docker-compose.yml",
     "cleanup": {
-      "paths": ["/tmp/*", "/var/cache/*"]
+      "paths": ["/tmp/dockmaster", "/var/cache/dockmaster"]
     }
   },
   "schedule": {
@@ -188,7 +194,7 @@ services:
       "type": "weekly",
       "weekday": "monday",
       "time": "00:00",
-      "paths": ["/tmp/*", "/var/cache/*"]
+      "paths": ["/tmp/dockmaster", "/var/cache/dockmaster"]
     }
   }
 }
@@ -198,24 +204,20 @@ services:
 
 为了避免在配置文件中明文存储敏感信息（如Docker仓库密码），工具支持使用环境变量来管理这些信息：
 
-### 使用环境变量存储密码
+### 提供临时凭据
 
-1. **通用环境变量**：设置 `DOCKER_PASSWORD` 环境变量
-   ```bash
-   export DOCKER_PASSWORD="your_password"
-   ```
+优先使用 `docker login` 配合 Docker credential helper。交互式临时密码也可以在隐藏输入中提供：
 
-2. **用户特定环境变量**：如果有多个用户，可以设置用户特定的环境变量
-   ```bash
-   # 假设用户名为 username
-   export DOCKER_PASSWORD_USERNAME="your_password"
-   ```
+```bash
+read -r -s -p "Registry password: " DOCKER_PASSWORD
+printf '\n'
+export DOCKER_PASSWORD
+dm push -u username
+unset DOCKER_PASSWORD
+```
 
-3. **持久化环境变量**：将环境变量添加到 `~/.bashrc` 或 `~/.profile` 文件中
-   ```bash
-   echo 'export DOCKER_PASSWORD="your_password"' >> ~/.bashrc
-   source ~/.bashrc
-   ```
+多个账户可以分别设置 `DOCKER_PASSWORD_USERNAME`（用户名大写），也应从隐藏输入或自己的凭据管理器注入。
+不要把真实密码写进 shell 命令、`~/.bashrc`、`~/.profile`、config.json 或 Git。
 
 ## 定时任务管理
 
@@ -321,8 +323,8 @@ services:
    - 查看任务列表 `dm schedule list`
 
 5. **推送镜像失败**
-   - 使用 `dm config` 配置正确的仓库信息（URL、用户名、密码）
-   - 确保已登录到镜像仓库：`dm push -u 用户名 -p 密码`
+   - 使用 `dm config` 配置仓库 URL/用户名；密码使用环境变量或 Docker 凭据存储
+   - 先运行 `docker login`，再 `dm push -u 用户名`；不要把密码写在命令行或配置文件
    - 检查是否有推送权限
    - 对于私有仓库，确保仓库已创建
 
@@ -338,6 +340,33 @@ services:
 1. 创建这些文件后再初始化
 2. 使用 `--force` 参数强制初始化
 
+## 凭据与验证
+
+不要把 registry 密码写入 config.json/Git 或使用 `-p` 放入 shell 历史。
+CLI 忽略旧的明文配置密码；保存配置时清空其磁盘副本。使用 Docker credential helper、
+`docker login`、环境变量或隐藏输入提示。`--password` 只保留旧调用兼容。
+
+```bash
+python -m pip install -e . pytest
+python -m pytest
+dm --help
+```
+
+这些测试使用临时目录和假 Docker 客户端，不构建/推送/删除镜像、容器或运行后台计划。
+真实 Docker 操作验收仍待完成，细节见 HANDOFF。
+
 ## 许可证
 
-MIT 
+自有源码采用 [MIT](LICENSE)，依赖和模板来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+
+## 容器清理的范围
+
+Compose 使用参数列表调用，不把项目文件路径解释为 shell 命令。
+默认缓存清理仅针对 `/tmp/dockmaster` 和 `/var/cache/dockmaster`；不扫整个临时目录。
+自定义路径必须是 `/tmp`、`/var/cache` 或 `/root/.cache` 下的明确子路径，
+不支持 glob、父级跳转、根目录或数据目录。旧配置中的 `/tmp/*` 等必须改为明确路径。
+删除前用容器内 `readlink -f --` 检查真实路径，拒绝指向缓存根以外的符号链接；
+容器需提供兼容的 readlink/rm。无法解析或删除失败会报告失败，请先确认路径已建立。
+执行清理时管理员需控制缓存目录，检查与删除之间不能被其他进程恶意替换链接。
+这次只用假 Docker 验证上述边界，没有执行真实删除、备份或定时任务。

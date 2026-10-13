@@ -65,7 +65,7 @@ DEFAULT_PROJECT_CONFIG: DefaultProjectConfig = {
     "container": {
         "name": None,  # 将使用项目名
         "compose_file": DEFAULT_FILES["compose_file"],
-        "cleanup": {"paths": ["/tmp/*", "/var/cache/*"]},
+        "cleanup": {"paths": ["/tmp/dockmaster", "/var/cache/dockmaster"]},
         "backup": {"cleanup": False, "auto_push": False},
     },
     "schedule": {

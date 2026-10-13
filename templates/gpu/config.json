@@ -1,0 +1,28 @@
+{
+  "project": {
+    "name": "modern-train",
+    "directory": "."
+  },
+  "image": {
+    "name": "modern-train",
+    "dockerfile": "Dockerfile",
+    "registry": {
+      "url": "docker.io",
+      "username": "",
+      "password": "",
+      "prefix": ""
+    }
+  },
+  "container": {
+    "name": "modern-train",
+    "compose_file": "docker-compose.yml",
+    "cleanup": {
+      "paths": []
+    },
+    "backup": {
+      "cleanup": false,
+      "auto_push": false
+    }
+  },
+  "schedule": {}
+}

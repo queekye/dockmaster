@@ -208,7 +208,7 @@ def configure_schedule() -> Dict[str, Any]:
         config["auto_push"] = questionary.confirm("是否自动推送备份镜像?", default=False).ask()
     elif task_type == "cleanup":
         paths = questionary.text(
-            "清理路径 (多个路径用逗号分隔)", default="/tmp/*,/var/cache/*"
+            "清理路径 (多个路径用逗号分隔)", default="/tmp/dockmaster,/var/cache/dockmaster"
         ).ask()
         config["paths"] = [p.strip() for p in paths.split(",")]
 

@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from loguru import logger
 
 from .base_manager import BaseManager
+from ..cleanup import DEFAULT_CLEANUP_PATHS, cleanup_container_paths
 from .image.base import ImageBuildError, ImagePushError, ProjectImage, ImagesSummary
 from .image.build import ImageBuilder
 from .image.push import ImagePusher
@@ -173,20 +174,10 @@ class ImageManager(BaseManager):
                 logger.error(f"获取容器 {container_name} 失败: {e}")
                 return False
 
-            # 如果需要清理容器
+            # Cleanup failures stop this requested backup instead of claiming success.
             if cleanup:
-                logger.warning("清理容器...")
-                try:
-                    # 清理临时文件
-                    paths = ["/tmp/*", "/var/cache/*"]
-                    for path in paths:
-                        try:
-                            container.exec_run(f"rm -rf {path}")
-                        except Exception as e:
-                            logger.error(f"清理路径 {path} 失败: {e}")
-                    logger.success("容器缓存清理完成")
-                except Exception as e:
-                    logger.warning(f"清理容器失败: {e}，继续保存")
+                logger.warning("清理 dockmaster 自有缓存目录...")
+                cleanup_container_paths(container, DEFAULT_CLEANUP_PATHS)
 
             # 设置仓库和标签
             if not repository:

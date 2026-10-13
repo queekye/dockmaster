@@ -1,0 +1,26 @@
+services:
+  modern-train:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: modern-train:local
+    init: true
+    ports:
+      - "127.0.0.1:21888:8888"
+    environment:
+      ENABLE_SSH: "0"
+      ENABLE_MLFLOW: "0"
+    volumes:
+      - gpu-workspace:/workspace
+    shm_size: '4gb'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: "no"
+
+volumes:
+  gpu-workspace:

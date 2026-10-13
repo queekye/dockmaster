@@ -277,7 +277,7 @@ def save_container(
 def push_image(
     registry: str = typer.Option(None, "-r", "--registry", help="远程仓库地址"),
     username: str = typer.Option(None, "-u", "--username", help="仓库用户名"),
-    password: str = typer.Option(None, "-p", "--password", help="仓库密码"),
+    password: str = typer.Option(None, "-p", "--password", help="兼容选项；建议用环境变量或 docker login，避免命令历史暴露"),
     tag: str = typer.Option("latest", "-t", "--tag", help="要推送的镜像标签"),
     prefix: str = typer.Option(None, "--prefix", help="镜像前缀，优先于username"),
     force: bool = typer.Option(False, "-f", "--force", help="强制推送，不进行状态检查"),
@@ -326,19 +326,17 @@ def push_image(
                 if password:
                     logger.info("已从环境变量 DOCKER_PASSWORD 获取密码")
 
-            # 如果环境变量中没有密码，尝试配置文件
-            if not password:
-                password = (
-                    project_manager.config.get("image", {}).get("registry", {}).get("password")
-                )
+            # Legacy plaintext config passwords are intentionally not read.
+            if project_manager.config.get("image", {}).get("registry", {}).get("password"):
+                logger.warning("配置中的明文密码已忽略，请改用环境变量或 docker login")
 
             # 如果仍然没有密码，提示用户输入
             if not password and username:
                 logger.warning("未找到密码，您可以：")
                 logger.warning(f"1. 设置环境变量 {env_var_name if username else 'DOCKER_PASSWORD'}")
-                logger.warning("2. 在配置文件中设置密码")
+                logger.warning("2. 使用 Docker 凭据存储配置 docker login")
                 logger.warning("3. 使用 'docker login' 命令手动登录")
-                logger.warning("4. 现在输入密码（不推荐，会显示在命令历史中）")
+                logger.warning("4. 在隐藏输入提示中输入临时密码，不会写入 config.json")
                 logger.warning("5. 如果您已经使用过 'docker login'，可以直接按回车输入空密码")
                 password = typer.prompt("请输入仓库密码", default="", hide_input=True)
                 # 如果用户输入了空密码，表示使用 docker login 的凭证

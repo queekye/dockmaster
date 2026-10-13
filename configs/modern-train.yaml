@@ -1,17 +1,8 @@
 cleanup:
   directories:
-  - /var/cache/apt/
-  - /root/.cache/pip/
-  - /root/.cache/huggingface/
-  - /tmp/*
-  - /var/log/*.log
-  - /var/log/*.gz
-  exclude_directories:
-  - /root/.cursor/
-  - /root/.config/cursor/
-  - /etc/ssh/
-  - /root/.ssh/
-  - /workspace/
+  - /tmp/dockmaster
+  - /var/cache/dockmaster
+  exclude_directories: []
 compose:
   file_path: ${project_dir}/docker-compose.yml
 container_name: modern-train
@@ -22,7 +13,7 @@ cron:
   max_backups: 5
   schedule: 0 0 * * *
 image_name: modern-train
-project_dir: /home/chenkang/workspace/deeplearning-docker/docker_projects/modern-train
+project_dir: . # set to your own templates/gpu checkout
 project_name: modern-train
 push:
   additional_tags: []

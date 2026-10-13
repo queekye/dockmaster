@@ -10,8 +10,11 @@ from pathlib import Path
 from subprocess import check_output
 from typing import Any, Callable, Dict, Optional, TypedDict, Union, List, NoReturn
 
-import daemon
-import daemon.pidfile
+if os.name == "posix":
+    import daemon
+    import daemon.pidfile
+else:
+    daemon = None
 import schedule
 from loguru import logger
 
@@ -243,6 +246,10 @@ class SchedulerDaemon:
             # 设置信号处理
             signal.signal(signal.SIGTERM, handle_signal)
             signal.signal(signal.SIGINT, handle_signal)
+
+            # python-daemon is POSIX-only; importing the CLI remains safe on Windows.
+            if daemon is None:
+                raise RuntimeError("Background scheduling requires a POSIX/Linux host")
 
             # 创建守护进程上下文
             context = daemon.DaemonContext(

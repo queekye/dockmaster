@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .managers.project_manager import ProjectManager
 
 
-def run_command(command: str, shell: bool = False, check: bool = True) -> Tuple[int, str, str]:
+def run_command(command: Union[str, List[str]], shell: bool = False, check: bool = True) -> Tuple[int, str, str]:
     """
     运行shell命令并返回结果
 
@@ -33,6 +33,8 @@ def run_command(command: str, shell: bool = False, check: bool = True) -> Tuple[
     """
     logger.debug(f"执行命令: {command}")
 
+    if shell and not isinstance(command, str):
+        raise ValueError("Argument lists must be executed without a shell")
     if shell:
         # 使用shell执行命令
         process = subprocess.Popen(
@@ -44,7 +46,7 @@ def run_command(command: str, shell: bool = False, check: bool = True) -> Tuple[
         )
     else:
         # 不使用shell执行命令
-        args = shlex.split(command)
+        args = shlex.split(command) if isinstance(command, str) else command
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
         )

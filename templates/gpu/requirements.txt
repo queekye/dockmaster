@@ -1,0 +1,26 @@
+transformers>=4.30.0
+datasets>=2.12.0
+evaluate
+pytz>=2023.3
+numpy>=1.24.0
+tqdm>=4.65.0
+Pillow>=9.5.0
+wandb>=0.15.0
+jupyter>=1.0.0
+ipython>=8.12.0
+pipreqs>=0.4.13
+modern-config-manager
+bytecode
+thop
+accelerate>=0.20.0  # 用于Transformers加速
+optimum>=1.8.0  # Transformers优化工具
+einops>=0.6.0  # 张量操作辅助库
+matplotlib>=3.7.0  # 用于可视化
+scikit-learn>=1.2.0  # 用于t-SNE降维和聚类算法
+pyclustering>=0.10.0  # 提供额外的聚类算法实现
+seaborn>=0.12.0  # 增强的统计数据可视化
+pyyaml>=6.0
+mlflow
+loguru
+gitpython
+psycopg2-binary

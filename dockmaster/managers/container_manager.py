@@ -19,6 +19,7 @@ from ..constants import COLORS, DEFAULT_FILES, ERROR_MESSAGES
 from ..interactive_utils import confirm_action
 from ..time_utils import get_timestamp
 from ..utils import run_command
+from ..cleanup import DEFAULT_CLEANUP_PATHS, cleanup_container_paths
 from .base_manager import BaseManager
 from .image_manager import ImageManager
 from .container_monitor import ContainerMonitor
@@ -134,7 +135,7 @@ class ContainerManager(BaseManager):
                     # 如果是通过状态检查后选择重启的情况，先停止容器
                     if hasattr(self, "_is_restart") and self._is_restart:
                         logger.warning("正在停止容器...")
-                        run_command(f"docker compose -f {self.compose_file} down", shell=True)
+                        run_command(["docker", "compose", "-f", str(self.compose_file), "down"])
                         success, error = self._wait_for_container_status("removed")
                         if not success:
                             raise ContainerError(error)
@@ -145,7 +146,7 @@ class ContainerManager(BaseManager):
                 pass
 
             logger.warning("启动容器...")
-            run_command(f"docker compose -f {self.compose_file} up -d", shell=True)
+            run_command(["docker", "compose", "-f", str(self.compose_file), "up", "-d"])
 
             success, error = self._wait_for_container_status("running")
             if not success:
@@ -176,7 +177,7 @@ class ContainerManager(BaseManager):
                     raise ContainerError("未找到Docker Compose文件，请确保docker-compose.yml存在")
 
             logger.warning("停止容器...")
-            run_command(f"docker compose -f {self.compose_file} down", shell=True)
+            run_command(["docker", "compose", "-f", str(self.compose_file), "down"])
 
             success, error = self._wait_for_container_status("removed")
             if not success:
@@ -242,15 +243,10 @@ class ContainerManager(BaseManager):
         try:
             container = self.docker_client.containers.get(self.container_name)
 
-            if not paths:
-                paths = ["/tmp/*", "/var/cache/*"]
-
-            logger.warning("清理容器缓存...")
-            for path in paths:
-                try:
-                    container.exec_run(f"rm -rf {path}")
-                except Exception as e:
-                    logger.error(f"清理路径 {path} 失败: {e}")
+            if paths is None:
+                paths = DEFAULT_CLEANUP_PATHS
+            logger.warning("清理明确配置的容器缓存路径...")
+            cleanup_container_paths(container, paths)
 
             logger.success("容器缓存清理完成")
             return True

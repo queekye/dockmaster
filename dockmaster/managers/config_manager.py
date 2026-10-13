@@ -1,6 +1,7 @@
 """配置管理器类"""
 
 import json
+from copy import deepcopy
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, Union, TypeVar, cast
@@ -78,7 +79,7 @@ class ConfigManager(BaseManager):
             DefaultProjectConfig: 默认配置
         """
         # 使用constants中的DEFAULT_PROJECT_CONFIG作为基础
-        config = cast(DefaultProjectConfig, DEFAULT_PROJECT_CONFIG.copy())
+        config = cast(DefaultProjectConfig, deepcopy(DEFAULT_PROJECT_CONFIG))
 
         # 填充项目特定的值
         config["project"]["name"] = self.project_name
@@ -205,9 +206,14 @@ class ConfigManager(BaseManager):
             ConfigError: 配置保存失败时抛出
         """
         try:
+            saved_config = deepcopy(self.config)
+            registry = saved_config.get("image", {}).get("registry", {})
+            if registry.get("password"):
+                logger.warning("Registry passwords are not saved; use environment variables or docker login")
+                registry["password"] = ""
             config_file = os.path.join(self.project_dir, "config.json")
             with open(config_file, "w", encoding="utf-8") as f:
-                json.dump(self.config, f, indent=2, ensure_ascii=False)
+                json.dump(saved_config, f, indent=2, ensure_ascii=False)
         except Exception as e:
             raise ConfigError(f"保存配置失败: {str(e)}")
 

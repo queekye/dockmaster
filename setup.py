@@ -4,9 +4,11 @@ from setuptools import find_packages, setup
 
 setup(
     name="dockmaster",
-    version="0.2.1",
+    version="0.2.2",
     packages=find_packages(),
     include_package_data=True,
+    license="MIT",
+    license_files=["LICENSE", "THIRD_PARTY_NOTICES.md"],
     install_requires=[
         "docker>=7.0.0",
         "typer>=0.9.0",
@@ -20,20 +22,20 @@ setup(
         "croniter>=2.0.0",
         "schedule",
         "loguru>=0.7.0",
-        "python-daemon>=3.0.1",
-        "pathlib>=1.0.1",
+        "python-daemon>=3.0.1; os_name == 'posix'",
         "requests>=2.31.0"
     ],
     entry_points={
         "console_scripts": [
             "dm=dockmaster.cli:main",
+            "dockmaster=dockmaster.cli:main",
         ],
     },
     python_requires=">=3.8",
     author="Kang Chen",
     author_email="chenkangcs@foxmail.com",
     description="Docker项目和容器管理工具",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     keywords="docker, container, management, devops, automation",
     url="https://github.com/queekye/dockmaster",

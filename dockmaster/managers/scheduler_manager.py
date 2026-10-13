@@ -191,7 +191,7 @@ class SchedulerManager(BaseManager):
             str: 成功返回job_id，失败返回False
         """
         if not paths:
-            paths = ["/tmp/*", "/var/cache/*"]
+            paths = ["/tmp/dockmaster", "/var/cache/dockmaster"]
 
         def cleanup_job():
             # 导入这里以避免循环依赖
